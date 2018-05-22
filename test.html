@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Test of JsPr</title>
+</head>
+<body>
+<script type="module">
+	import makeJsPr from './main.js';
+	
+	const { _, $, }= makeJsPr();
+	
+	class TestClass
+	{
+		constructor( pub, pri, )
+		{
+			// assign to private object
+			_(this).pri= pri;
+			_(this).typeOfPri= typeof pri;
+			
+			// assign to public object
+			this.pub= pub;
+			this.typeOfPub= typeof pub;
+		}
+		
+		setPri( pri, )
+		{
+			// in public methods, use _(this) to access private object
+			_(this).pri= pri;
+			_(this).typeOfPri= typeof pri;
+		}
+		
+		static make( pub, pri, )
+		{
+			return new this( pub, pri, );
+		}
+		
+		static makePri( pub, pri, )
+		{
+			return new (_(this))( pub, pri, );
+		}
+	}
+	
+	_(TestClass).make= function( pub, pri, ){
+		return new this( pub, pri, );
+	};
+	
+	_(TestClass).makePub= function( pub, pri, ){
+		return new ($(this))( pub, pri, );
+	};
+	
+	// assign to private prototype
+	_(TestClass.prototype).setPri= function( pri, ){
+		
+		// in private methods, this is the private object
+		this.pri= pri;
+		this.typeOfPri= typeof pri;
+	};
+	
+	_(TestClass.prototype).setPub= function( pub, ){
+		
+		// in private methods, use $(this) to access public object
+		$(this).pub= pub;
+		$(this).typeOfPub= typeof pub;
+	};
+	
+	const testObject= new TestClass( 'test', 1, );
+	const _testObject= new (_(TestClass))( 'test', 1, );
+	
+	if(!( $(_(testObject))===testObject ))
+		throw 'public part of private part is not same with the object self.';
+	
+	if(!( _($(_testObject))===_testObject ))
+		throw 'private part of public part is not same with the private object self.';
+	
+	if(!( _(testObject).constructor===_(TestClass) ))
+		throw 'constuctor of private part is not same with private part of constructor.';
+	
+	if(!( _(testObject) instanceof _(TestClass) ))
+		throw 'private part is not a instanceof private part of constructor.';
+	
+	if(!( _(testObject).__proto__===_(testObject.__proto__) ))
+		throw '__proto__ of private part is not same with private part of __proto__.';
+	
+	if(!( _(TestClass).prototype===_(TestClass.prototype) ))
+		throw 'prototype of private part is not same with private part of prototype.';
+	
+	if(!( testObject.pri===undefined ))
+		throw 'pri is not private.';
+	
+	if(!( testObject.pub==='test' ))
+		throw 'pub is not public.';
+	
+	if(!( _(testObject).pri===1 ))
+		throw 'pri is not accessable by _().';
+	
+	testObject.setPri( 2, );
+	if(!( _(testObject).pri===2 ))
+		throw 'setting pri failed.';
+	
+	if(!( _(testObject).pri===2 ))
+		throw 'setting pri failed.';
+	
+	if(!(
+		TestClass.make() instanceof TestClass
+	&&
+		TestClass.makePri() instanceof _(TestClass)
+	&&
+		_(TestClass).make() instanceof _(TestClass)
+	&&
+		_(TestClass).makePub() instanceof TestClass
+	))
+		throw 'construct failed.';
+	
+	if(!( _((x=>2*x))(3)===(x=>2*x)(3) ))
+		throw 'two private helpers are hybrid.';
+	
+	const { _:another_, $:another$, }= makeJsPr();
+	
+	if(!( another_(testObject)!==_(testObject) ))
+		throw 'two private helpers are hybrid.';
+	
+	if(!( another$(_testObject)===undefined ))
+		throw 'two private helpers are hybrid.';
+	
+	console.log( 'ok', );
+</script>
+</body>
+</html>
